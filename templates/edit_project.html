@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Project</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> <!--{{ url_for('static', filename='css/style.css') }}  /static/css/style.css-->
+
+</head>
+<body>
+    <div class="top">
+        <h1>Edit Project: {{ project.first_name }} {{ project.last_name }} vessel name: {{ project.vessel_name }}</h1>
+    </div>
+    <!-- Навигация для переключения между разделами -->
+    <div class="osnova">
+        <button onclick="showSection('gen_info')">Gen Info</button>
+        <button onclick="showSection('safety')">Safety</button>
+        <button onclick="showSection('survey')">Survey</button>
+    </div>
+    <!-- Секция Gen Info -->
+    <div id="gen_info_section" class="infomation">
+        <h2>Gen Info:</h2>
+        <div>
+            <p><strong>City:</strong> {{ project.city }}</p>
+            <p><strong>Phone:</strong> {{ project.phone }}</p>
+            <p><strong>Post:</strong> {{ project.post }}</p>
+            <p><strong>vessel name</strong> {{ project.vessel_name }}</p>
+        </div>
+        <ul>
+            {% for step in project.gen_info_steps %}
+                <li>{{ step }}</li>
+                <form method="POST" action="/edit_project/{{ project_id }}/delete_step">
+                    <input type="hidden" name="step_to_delete" value="{{ step }}">
+                    <input type="hidden" name="section" value="gen_info">
+                    <button type="submit">Delete</button>
+                </form>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Секция Safety -->
+    <div id="safety_section" style="display: none;" class="infomation">
+        <h2>Safety:</h2>
+        <ul>
+            {% for step in project.safety_steps %}
+                <li>{{ step }}</li>
+                <form method="POST" action="/edit_project/{{ project_id }}/delete_step">
+                    <input type="hidden" name="step_to_delete" value="{{ step }}">
+                    <input type="hidden" name="section" value="safety">
+                    <button type="submit">Delete</button>
+                </form>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Секция Survey -->
+    <div id="survey_section" style="display: none;" class="infomation">
+        <h2>Survey:</h2>
+        <ul>
+            {% for step in project.survey_steps %}
+                <li>{{ step }}</li>
+                <form method="POST" action="/edit_project/{{ project_id }}/delete_step">
+                    <input type="hidden" name="step_to_delete" value="{{ step }}">
+                    <input type="hidden" name="section" value="survey">
+                    <button type="submit">Delete</button>
+                </form>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Форма для добавления шага в текущий раздел -->
+    <h2>Add Step:</h2>
+    <form method="POST" action="/edit_project/{{ project_id }}/add_step?current_section=gen_info">
+        <label for="step_description">Step Description:</label>
+        <input type="text" id="step_description" name="step_description">
+        <input type="hidden" name="section" id="current_section" value="gen_info"> <!-- Изменяемое скрытое поле для указания раздела -->
+        <input type="submit" value="Add Step">
+    </form>
+
+    <!--  тестирую      -->
+    <h3>Sections:</h3>
+    <h2>Добавить раздел</h2>
+    <form action="{{ url_for('add_section', project_id=project_id) }}" method="post">
+        <label for="section_name">Имя раздела:</label>
+        <input type="text" name="section_name" id="section_name" required>
+        <button type="submit">Добавить раздел</button>
+    </form>
+    <ul>
+        {% for section in project.sections %}
+            <!-- Кнопка удаления раздела -->
+            <form action="{{ url_for('delete_section', project_id=project_id, section_name=section.name) }}" method="post">
+                <button type="submit">Удалить раздел</button>
+            </form>
+            <li>{{ section.name }}</li>
+                <h2>Добавить подраздел</h2>
+                <form action="{{ url_for('add_subsection', project_id=project_id) }}" method="post">
+                    <input type="hidden" name="section_name" value="{{ section.name }}">
+                    <label for="subsection_name">Имя подраздела:</label>
+                    <input type="text" name="subsection_name" id="subsection_name" required>
+                    <button type="submit">Добавить подраздел</button>
+                </form>
+            {% if section.subsections %}
+                <ul>
+                    {% for subsection in section.subsections %}
+                        <!-- Кнопка удаления подраздела -->
+                        <form action="{{ url_for('delete_subsection', project_id=project_id, section_name=section.name, subsection_name=subsection.name) }}" method="post">
+                            <button type="submit">Удалить подраздел</button>
+                        </form>
+                        <li>{{ subsection.name }}</li>
+                        <h2>Добавить ячейку</h2>
+                        <form action="{{ url_for('add_cell', project_id=project_id) }}" method="post">
+                            <input type="hidden" name="section_name" value="{{ section.name }}">
+                            <input type="hidden" name="subsection_name" value="{{ subsection.name }}">
+                            <label for="cell_name">Имя ячейки:</label>
+                            <input type="text" name="cell_name" id="cell_name" required>
+                            <label for="cell_description">Описание ячейки:</label>
+                            <textarea name="cell_description" id="cell_description" rows="4" required></textarea>
+                            <button type="submit">Добавить ячейку</button>
+                        </form>
+                        {% if subsection.cells %}
+                            <ul>
+                                {% for cell in subsection.cells %}
+                                    <!-- Кнопка удаления ячейки -->
+                                    <form action="{{ url_for('delete_cell', project_id=project_id, section_name=section.name, subsection_name=subsection.name, cell_name=cell.name) }}" method="post">
+                                        <button type="submit">Удалить ячейку</button>
+                                    </form>
+                                    
+                                    <li>{{ cell.name }} - {{ cell.description }}</li>
+                                    {% if cell.rating %}
+                                        <p><strong>Рейтинг:</strong> {{ cell.rating }}</p>
+                                        <!-- Кнопка удаления рейтинга -->
+                                        <form action="{{ url_for('delete_rating', project_id=project_id, section_name=section.name, subsection_name=subsection.name, cell_name=cell.name) }}" method="post">
+                                            <button type="submit">Удалить рейтинг</button>
+                                        </form>
+                                    {% endif %}
+                                    {% if cell.comment %}
+                                        <p><strong>Комментарий:</strong> {{ cell.comment }}</p>
+                                        <!-- Кнопка удаления комментария -->
+                                        <form action="{{ url_for('delete_comment', project_id=project_id, section_name=section.name, subsection_name=subsection.name, cell_name=cell.name, comment_index=loop.index0) }}" method="post">
+                                            <button type="submit">Удалить комментарий</button>
+                                        </form>
+                                    {% endif %}
+                                    <h2>Добавить комментарий к ячейке</h2>
+                                    <form action="{{ url_for('add_comment', project_id=project_id, section_name=section.name, subsection_name=subsection.name, cell_name=cell.name) }}" method="post">
+                                        <label for="cell_comment">Комментарий:</label>
+                                        <textarea name="cell_comment" id="cell_comment" rows="4" required></textarea>
+                                        <button type="submit">Добавить комментарий</button>
+                                    </form>
+                                    <h2>Выбрать рейтинг ячейки</h2>
+                                    <form action="{{ url_for('add_rating', project_id=project_id, section_name=section.name, subsection_name=subsection.name, cell_name=cell.name) }}" method="post">
+                                        <label for="cell_rating">Рейтинг:</label>
+                                        <select name="cell_rating" id="cell_rating" required>
+                                            <option value="good">Хорошо</option>
+                                            <option value="average">Средне</option>
+                                            <option value="bad">Плохо</option>
+                                        </select>
+                                        <button type="submit">Выбрать рейтинг</button>
+                                    </form>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+
+
+    
+
+    
+    
+    
+    <!-- JavaScript для обновления значения скрытого поля section при переключении разделов -->
+    <script>
+        
+        $(document).ready(function() {
+        // Обработчик для формы добавления подраздела
+            $("#add-subsection-form").submit(function(event) {
+                event.preventDefault();
+                var subsectionName = $("#subsection_name").val();
+                if (subsectionName) {
+                    // Отправить форму, только если имя подраздела не пустое
+                    $(this).unbind("submit").submit();
+                } else {
+                    alert("Введите имя подраздела.");
+                }
+            });
+
+            // Обработчик для формы добавления ячейки
+            $("#add-cell-form").submit(function(event) {
+                event.preventDefault();
+                var cellName = $("#cell_name").val();
+                var cellDescription = $("#cell_description").val();
+                if (cellName && cellDescription) {
+                    // Отправить форму, только если имя ячейки и описание не пустые
+                    $(this).unbind("submit").submit();
+                } else {
+                    alert("Введите имя ячейки и описание.");
+                }
+            });
+        });
+
+
+        function showSection(section) {
+            var genInfoSection = document.getElementById("gen_info_section");
+            var safetySection = document.getElementById("safety_section");
+            var surveySection = document.getElementById("survey_section");
+    
+            genInfoSection.style.display = "none";
+            safetySection.style.display = "none";
+            surveySection.style.display = "none";
+    
+            if (section === "gen_info") {
+                genInfoSection.style.display = "block";
+            } else if (section === "safety") {
+                safetySection.style.display = "block";
+            } else if (section === "survey") {
+                surveySection.style.display = "block";
+            }
+    
+            // Обновляем значение скрытого поля current_section в форме
+            var currentSectionField = document.getElementById("current_section");
+            currentSectionField.value = section;
+        }
+    
+        // Используем текущий раздел из параметров URL
+        var urlParams = new URLSearchParams(window.location.search);
+        var currentSection = urlParams.get("current_section");
+        if (currentSection) {
+            showSection(currentSection);
+        }
+    </script>
+    
+</body>
+</html>
+
